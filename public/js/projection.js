@@ -4,7 +4,7 @@
   const waitingScreen = document.getElementById('waiting-screen');
   const resultsScreen = document.getElementById('results-screen');
   const params = new URLSearchParams(window.location.search);
-  const sessionId = params.get('s');
+  let sessionId = params.get('s');
 
   let socket = null;
   let sessionData = null;
@@ -16,9 +16,20 @@
 
   // --- Init ---
   async function init() {
+    // If no session ID in URL, fetch the latest session
     if (!sessionId) {
-      waitingScreen.innerHTML = '<p style="color: rgba(255,255,255,0.7); font-size:1.2rem;">セッションIDが指定されていません</p>';
-      return;
+      try {
+        const latestRes = await fetch('/api/sessions/latest');
+        if (!latestRes.ok) {
+          waitingScreen.innerHTML = '<p style="color: rgba(255,255,255,0.7); font-size:1.2rem;">セッションがまだ作成されていません</p>';
+          return;
+        }
+        const latestData = await latestRes.json();
+        sessionId = latestData.id;
+      } catch (e) {
+        waitingScreen.innerHTML = '<p style="color: rgba(255,255,255,0.7); font-size:1.2rem;">接続に失敗しました</p>';
+        return;
+      }
     }
 
     try {

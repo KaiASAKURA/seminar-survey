@@ -231,7 +231,7 @@
     projectionBtn.className = 'control-btn control-btn--projection';
     projectionBtn.textContent = '投影画面を開く';
     projectionBtn.addEventListener('click', () => {
-      window.open(`/projection.html?s=${sessionData.id}`, '_blank');
+      window.open('/projection.html', '_blank');
     });
 
     controlsCard.appendChild(startBtn);

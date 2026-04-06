@@ -66,13 +66,36 @@ function computeResults(session) {
 }
 
 // --- Helper: build participant URL ---
-function buildParticipantUrl(req, sessionId) {
+function buildParticipantUrl(req) {
   const host = req.headers.host || `localhost:${PORT}`;
   const protocol = host.startsWith('localhost') || host.startsWith('127.0.0.1') ? 'http' : 'https';
-  return `${protocol}://${host}/?s=${sessionId}`;
+  return `${protocol}://${host}/`;
 }
 
 // --- REST API ---
+
+// Get latest session
+app.get('/api/sessions/latest', (req, res) => {
+  if (sessions.size === 0) {
+    return res.status(404).json({ error: 'セッションがありません' });
+  }
+  // Return the most recently created session
+  let latest = null;
+  for (const session of sessions.values()) {
+    if (!latest || session.createdAt > latest.createdAt) {
+      latest = session;
+    }
+  }
+  res.json({
+    id: latest.id,
+    name: latest.name,
+    status: latest.status,
+    questions: latest.questions,
+    responseCount: latest.responses.length,
+    createdAt: latest.createdAt,
+    participantUrl: latest.participantUrl
+  });
+});
 
 // Create session
 app.post('/api/sessions', async (req, res) => {
@@ -83,7 +106,7 @@ app.post('/api/sessions', async (req, res) => {
     }
 
     const sessionId = uuidv4().slice(0, 8);
-    const participantUrl = buildParticipantUrl(req, sessionId);
+    const participantUrl = buildParticipantUrl(req);
 
     const qrCodeDataUrl = await QRCode.toDataURL(participantUrl, {
       width: 400,

@@ -3,16 +3,27 @@
 
   const app = document.getElementById('app');
   const params = new URLSearchParams(window.location.search);
-  const sessionId = params.get('s');
+  let sessionId = params.get('s');
   let socket = null;
   let sessionData = null;
   const answers = {};
 
   // --- Init ---
   async function init() {
+    // If no session ID in URL, fetch the latest session
     if (!sessionId) {
-      showError('セッションIDが指定されていません', 'URLを確認してください');
-      return;
+      try {
+        const latestRes = await fetch('/api/sessions/latest');
+        if (!latestRes.ok) {
+          showError('セッションがまだ作成されていません', 'しばらくお待ちください');
+          return;
+        }
+        const latestData = await latestRes.json();
+        sessionId = latestData.id;
+      } catch (e) {
+        showError('接続に失敗しました', 'ページを再読み込みしてください');
+        return;
+      }
     }
 
     // Check if already answered
@@ -22,7 +33,6 @@
         return;
       }
     } catch (e) {
-      // localStorage unavailable (e.g. private browsing with strict settings) — proceed normally
       console.warn('localStorage not available:', e);
     }
 
